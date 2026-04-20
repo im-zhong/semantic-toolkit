@@ -13,8 +13,9 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Microsoft YaHei', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
+            /* 移除min-height限制，让页面可以滚动显示完整内容 */
             padding: 20px;
+            padding-bottom: 40px;
         }
         .container {
             max-width: 1400px;
@@ -62,7 +63,8 @@
             background: white;
             border-radius: 12px;
             padding: 25px;
-            height: 100%;
+            /* 移除height: 100%限制，让内容完整显示 */
+            min-height: 100%;
             box-shadow: 0 10px 40px rgba(0,0,0,0.2);
         }
         .card-title {
@@ -126,6 +128,7 @@
             padding: 15px;
             background: #fafafa;
             line-height: 1.8;
+            /* 确保内容完整显示，不限制高度 */
         }
         .result-content p {
             margin-bottom: 8px;
