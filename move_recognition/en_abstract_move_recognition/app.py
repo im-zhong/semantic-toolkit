@@ -31,32 +31,37 @@ MOVE_LABELS = {
 }
 
 # Prompt template for English abstracts
-PROMPT_TEMPLATE = """Please analyze the following English scientific abstract and identify its move structure.
+PROMPT_TEMPLATE = """Please carefully analyze the following English scientific abstract and identify its move structure sentence by sentence.
 
 【Abstract to Analyze】
 {abstract}
 
-【Task Requirements】
-Identify sentences belonging to each of the following five move types:
+【Move Classification Standards】
 1. BACKGROUND: Introduces research field status, existing problems, research importance
 2. PURPOSE: States the problems to solve, objectives, innovations
 3. METHOD: Describes methods, techniques, experimental design
 4. RESULT: Shows research findings, experimental results, performance metrics
 5. CONCLUSION: Summarizes contributions, significance, future outlook
 
-【Output Format】
-Please strictly output in the following JSON format, do not output any other content:
-{{"background": ["sentence1", "sentence2"], "purpose": ["sentence1"], "method": ["sentence1", "sentence2"], "result": ["sentence1"], "conclusion": ["sentence1"]}}
+【Specific Task】
+Please process the abstract according to these steps:
+1. First, split the abstract into sentences (using periods, question marks, and exclamation marks as delimiters)
+2. Then, classify each sentence into a move category
+3. Ensure every sentence is classified, do not omit any sentence
+4. Organize the results by move type
 
-【Critical Requirements】
-1. Extract original sentences directly, keep them complete
-2. If a move type does not exist, use empty array []
-3. Each sentence should be classified into only one primary move
-4. Output JSON only, do not output any other text
-5. CRITICAL: Make sure to identify ALL sentences in the abstract, do not omit any sentences
-6. Be consistent in your classification - use the same criteria for all sentences
-7. Process the abstract sentence by sentence, ensure complete coverage
-8. Must output complete classification results, ensure JSON format is correct and complete"""
+【Output Format】
+Strictly output in the following JSON format, do not output any other content:
+{{"background": ["complete sentence 1", "complete sentence 2"], "purpose": ["complete sentence"], "method": ["complete sentence"], "result": ["complete sentence"], "conclusion": ["complete sentence"]}}
+
+【Strict Requirements】
+1. MUST identify and classify EVERY sentence in the abstract, omissions are not allowed
+2. Use complete original sentences from the text, do not modify or truncate them
+3. Each sentence can only be classified into one move category
+4. If a move type has no corresponding sentences, use an empty array []
+5. Output only JSON, do not add any explanatory text
+6. Ensure JSON format is correct with all brackets and quotes matched
+7. Include complete sentences even if they are long"""
 
 
 def parse_sentences(text: str) -> dict:
@@ -107,7 +112,7 @@ def analyze_abstract(api_key: str, abstract: str) -> dict:
         response = client.chat.completions.create(
             model="glm-4",
             messages=[
-                {"role": "system", "content": "You are a professional scientific literature analysis expert. Your task is to consistently classify ALL sentences in the abstract. Be thorough and systematic - do not skip or omit any sentences. Output only JSON format. Must output complete results for all sentences without stopping prematurely."},
+                {"role": "system", "content": "You are a professional scientific literature analysis expert. Your core task is to analyze the abstract sentence by sentence and classify each sentence into a move category. You MUST ensure that you identify and classify EVERY sentence in the abstract, no omissions are allowed. Output strictly in the required JSON format, ensuring each sentence is included in the results."},
                 {"role": "user", "content": prompt}
             ],
             temperature=0.1,  # Lower temperature for more consistent results
@@ -130,8 +135,14 @@ def analyze_abstract(api_key: str, abstract: str) -> dict:
         # Use regex to extract
         result = parse_sentences(result_text)
         if result['sentences']:
+            print(f"Identified {len(result['sentences'])} sentences")
+            # Count sentences per move type
+            from collections import Counter
+            label_counts = Counter([s['move_label'] for s in result['sentences']])
+            print(f"Move distribution: {dict(label_counts)}")
             return result
 
+        print("Warning: Could not extract sentences from response")
         return {"raw_response": result_text, "sentences": []}
 
     except Exception as e:

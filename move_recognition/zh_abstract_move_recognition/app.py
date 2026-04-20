@@ -31,32 +31,37 @@ MOVE_LABELS = {
 }
 
 # 提示词模板
-PROMPT_TEMPLATE = """请分析以下中文科技论文摘要，识别其中的语步结构。
+PROMPT_TEMPLATE = """请仔细分析以下中文科技论文摘要，逐句识别并分类其中的语步结构。
 
 【待分析摘要】
 {abstract}
 
-【任务要求】
-从原文中识别出分别属于以下五类语步的句子：
+【语步分类标准】
 1. 研究背景(background)：介绍研究领域现状、存在问题、研究重要性
 2. 研究目的(purpose)：说明本研究要解决的问题、目标、创新点
 3. 研究方法(method)：描述采用的方法、技术、实验设计
 4. 研究结果(result)：展示研究发现、实验结果、性能指标
 5. 研究结论(conclusion)：总结研究贡献、意义、未来展望
 
-【输出格式】
-请严格按照以下JSON格式输出，不要输出任何其他内容：
-{{"background": ["句子1", "句子2"], "purpose": ["句子1"], "method": ["句子1", "句子2"], "result": ["句子1"], "conclusion": ["句子1"]}}
+【具体任务】
+请按照以下步骤处理：
+1. 首先将摘要按句子分割（以句号、问号、感叹号为分隔符）
+2. 然后对每个句子进行语步分类
+3. 确保每个句子都被分类，不要遗漏任何句子
+4. 将分类结果按语步类型组织
 
-【关键要求】
-1. 尽量直接抽取原文句子，保持原句完整
-2. 如果某类语步不存在，使用空数组 []
-3. 每个句子只归类到一个主要语步
-4. 只输出JSON，不要输出其他任何文字
-5. CRITICAL: 务必识别摘要中的所有句子，不要遗漏任何句子
-6. 保持分类一致性，对类似句子使用相同的标准
-7. 逐句处理摘要，确保完整覆盖所有内容
-8. 必须完整输出所有分类结果，确保JSON格式正确且完整"""
+【输出格式】
+严格按照以下JSON格式输出，不要输出任何其他内容：
+{{"background": ["完整的句子1", "完整的句子2"], "purpose": ["完整的句子"], "method": ["完整的句子"], "result": ["完整的句子"], "conclusion": ["完整的句子"]}}
+
+【严格要求】
+1. 必须识别并分类摘要中的每一个句子，不允许遗漏
+2. 直接使用原文中的完整句子，不要修改或截断
+3. 每个句子只能归为一个语步类别
+4. 如果某类语步没有对应句子，使用空数组 []
+5. 只输出JSON，不要添加任何说明文字
+6. 确保JSON格式正确，所有括号和引号都匹配
+7. 即使句子很长，也要完整包含在结果中"""
 
 
 def parse_sentences(text: str) -> dict:
@@ -108,7 +113,7 @@ def analyze_abstract(api_key: str, abstract: str) -> dict:
         response = client.chat.completions.create(
             model="glm-4",
             messages=[
-                {"role": "system", "content": "你是一位专业的科技文献分析专家。你的任务是一致地分类摘要中的所有句子。要全面系统，不要跳过或遗漏任何句子。只输出JSON格式。必须完整输出所有句子的分类结果，不能中途停止。"},
+                {"role": "system", "content": "你是一位专业的科技文献分析专家。你的核心任务是逐句分析摘要，对每个句子进行语步分类。必须确保识别并分类摘要中的每一个句子，不能遗漏任何句子。严格按照要求的JSON格式输出，确保每个句子都包含在结果中。"},
                 {"role": "user", "content": prompt}
             ],
             temperature=0.1,  # 降低温度以获得更一致的结果
@@ -131,8 +136,14 @@ def analyze_abstract(api_key: str, abstract: str) -> dict:
         # 使用正则提取
         result = parse_sentences(result_text)
         if result['sentences']:
+            print(f"识别到 {len(result['sentences'])} 个句子")
+            # 统计各语步的句子数量
+            from collections import Counter
+            label_counts = Counter([s['语步标签'] for s in result['sentences']])
+            print(f"各语步句子分布: {dict(label_counts)}")
             return result
 
+        print("警告: 未能从响应中提取到句子")
         return {"raw_response": result_text, "sentences": []}
 
     except Exception as e:
