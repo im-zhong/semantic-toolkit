@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>中文基金项目语步识别工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .home-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+        .home-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        .subtitle {
+            color: rgba(255,255,255,0.9);
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .main-layout {
+            display: flex;
+            gap: 20px;
+        }
+        .left-panel, .right-panel {
+            flex: 1;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            height: 100%;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+            min-height: 200px;
+            resize: vertical;
+            font-family: inherit;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 32px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .result-section {
+            margin-top: 20px;
+            display: none;
+        }
+        .result-content {
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            background: #fafafa;
+            line-height: 1.8;
+        }
+        .result-content p {
+            margin-bottom: 8px;
+        }
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        .loading::after {
+            content: '';
+            animation: dots 1.5s infinite;
+        }
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+        .api-section {
+            margin-bottom: 20px;
+        }
+        .api-section h4 {
+            color: #667eea;
+            margin: 15px 0 10px 0;
+        }
+        pre {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 12px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+        .code-comment { color: #6a9955; }
+        .code-string { color: #ce9178; }
+        .code-key { color: #9cdcfe; }
+        .endpoint {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-family: monospace;
+            margin-right: 10px;
+        }
+        .param-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+            font-size: 13px;
+        }
+        .param-table th, .param-table td {
+            border: 1px solid #e0e0e0;
+            padding: 8px;
+            text-align: left;
+        }
+        .param-table th {
+            background: #f5f5f5;
+        }
+        .label-tag {
+            display: inline-block;
+            background: #e8f4f8;
+            color: #1976d2;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin: 2px;
+        }
+        .api-scroll {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header-row">
+            <div></div>
+            <h1>中文基金项目语步识别工具</h1>
+            <a href="http://127.0.0.1:7862" class="home-btn">返回首页</a>
+        </div>
+        <p class="subtitle">自动识别基金项目文本中的立项依据、研究目标、研究内容、技术路线、预期成果、应用价值</p>
+
+        <div class="main-layout">
+            <!-- 左侧：功能测试 -->
+            <div class="left-panel">
+                <div class="card">
+                    <div class="card-title">功能测试</div>
+                    <div class="form-group">
+                        <label>基金项目文本内容</label>
+                        <textarea id="projectText" placeholder="请粘贴基金项目文本内容..."></textarea>
+                    </div>
+                    <button class="btn" id="analyzeBtn" onclick="analyze()">开始识别</button>
+                    <div class="result-section" id="resultSection">
+                        <h4>识别结果</h4>
+                        <div id="resultContent"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧：API调用示例 -->
+            <div class="right-panel">
+                <div class="card">
+                    <div class="card-title">API调用演示</div>
+                    <div class="api-scroll">
+                        <div class="api-section">
+                            <p><span class="endpoint">POST</span> <code>/api/analyze</code></p>
+                        </div>
+
+                        <div class="api-section">
+                            <h4>请求参数</h4>
+                            <table class="param-table">
+                                <tr><th>参数名</th><th>类型</th><th>必填</th><th>说明</th></tr>
+                                <tr><td>text</td><td>string</td><td>是</td><td>基金项目文本</td></tr>
+                            </table>
+                        </div>
+
+                        <div class="api-section">
+                            <h4>语步标签</h4>
+                            <p>
+                                <span class="label-tag">basis - 立项依据</span>
+                                <span class="label-tag">objective - 研究目标</span>
+                                <span class="label-tag">content - 研究内容</span>
+                                <span class="label-tag">approach - 技术路线</span>
+                                <span class="label-tag">expected_result - 预期成果</span>
+                                <span class="label-tag">application_value - 应用价值</span>
+                            </p>
+                        </div>
+
+                        <div class="api-section">
+                            <h4>Python示例</h4>
+                            <pre><span class="code-key">import</span> requests
+
+url = <span class="code-string">"http://localhost:5002/api/analyze"</span>
+data = {<span class="code-string">"text"</span>: <span class="code-string">"您的项目文本"</span>}
+response = requests.post(url, json=data)
+<span class="code-key">print</span>(response.json())</pre>
+                        </div>
+
+                        <div class="api-section">
+                            <h4>curl示例</h4>
+                            <pre>curl -X POST http://localhost:5002/api/analyze \
+  -H <span class="code-string">"Content-Type: application/json"</span> \
+  -d <span class="code-string">'{"text": "您的项目文本"}'</span></pre>
+                        </div>
+
+                        <div class="api-section">
+                            <h4>返回示例</h4>
+                            <pre>{
+    <span class="code-key">"sentences"</span>: [
+        {<span class="code-key">"句子内容"</span>: <span class="code-string">"..."</span>, <span class="code-key">"语步标签"</span>: <span class="code-string">"basis"</span>},
+        {<span class="code-key">"句子内容"</span>: <span class="code-string">"..."</span>, <span class="code-key">"语步标签"</span>: <span class="code-string">"objective"</span>}
+    ]
+}</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function analyze() {
+            const text = document.getElementById('projectText').value.trim();
+            const btn = document.getElementById('analyzeBtn');
+            const resultSection = document.getElementById('resultSection');
+            const resultContent = document.getElementById('resultContent');
+
+            if (!text) {
+                alert('请输入基金项目文本内容');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = '识别中...';
+            resultSection.style.display = 'block';
+            resultContent.innerHTML = '<div class="loading">正在分析中</div>';
+
+            try {
+                const response = await fetch('/api/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: text })
+                });
+
+                const data = await response.json();
+
+                if (data.sentences && data.sentences.length > 0) {
+                    displayResults(data.sentences);
+                } else if (data.raw_response) {
+                    resultContent.innerHTML = `<div class="result-content"><pre>${data.raw_response}</pre></div>`;
+                } else if (data.error) {
+                    resultContent.innerHTML = `<div class="error-message">错误: ${data.error}</div>`;
+                } else {
+                    resultContent.innerHTML = `<div class="error-message">未知错误</div>`;
+                }
+            } catch (error) {
+                resultContent.innerHTML = `<div class="error-message">请求失败: ${error.message}</div>`;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '开始识别';
+            }
+        }
+
+        function displayResults(sentences) {
+            const resultContent = document.getElementById('resultContent');
+            const labelNames = {
+                'basis': '立项依据',
+                'objective': '研究目标',
+                'content': '研究内容',
+                'approach': '技术路线',
+                'expected_result': '预期成果',
+                'application_value': '应用价值'
+            };
+
+            const grouped = {
+                'basis': [],
+                'objective': [],
+                'content': [],
+                'approach': [],
+                'expected_result': [],
+                'application_value': []
+            };
+
+            sentences.forEach(s => {
+                const sentence = s['句子内容'] || s.sentence || '';
+                const label = s['语步标签'] || s.label || 'UNKNOWN';
+                if (grouped[label]) {
+                    grouped[label].push(sentence);
+                }
+            });
+
+            const order = ['basis', 'objective', 'content', 'approach', 'expected_result', 'application_value'];
+            let html = '<div class="result-content">';
+
+            order.forEach(label => {
+                if (grouped[label].length > 0) {
+                    html += `<p><strong>${labelNames[label]}：</strong>${grouped[label].join('')}</p>`;
+                }
+            });
+
+            html += '</div>';
+            resultContent.innerHTML = html;
+        }
+    </script>
+</body>
+</html>
