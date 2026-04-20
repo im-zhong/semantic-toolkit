@@ -69,8 +69,8 @@
             background: white;
             border-radius: 12px;
             padding: 25px;
-            /* 移除height: 100%限制，让内容完整显示 */
-            min-height: 100%;
+            /* 完全移除高度限制，让内容决定高度 */
+            height: auto;
             box-shadow: 0 10px 40px rgba(0,0,0,0.2);
         }
         .card-title {
@@ -134,10 +134,11 @@
             padding: 15px;
             background: #fafafa;
             line-height: 1.8;
-            /* 确保内容完整显示，不限制高度 */
-            /* 移除可能的高度限制 */
+            /* 确保内容完整显示，完全不限制高度 */
             height: auto !important;
             max-height: none !important;
+            min-height: auto !important;
+            overflow: visible !important;
         }
         .result-content p {
             margin-bottom: 8px;
@@ -336,6 +337,15 @@ response = requests.post(url, json=data)
 
                 const data = await response.json();
 
+                // 添加调试信息
+                console.log('API返回数据:', data);
+                console.log('返回数据类型:', typeof data);
+                console.log('是否有sentences:', !!data.sentences);
+                if (data.sentences) {
+                    console.log('sentences数量:', data.sentences.length);
+                    console.log('sentences详细:', data.sentences);
+                }
+
                 if (data.error) {
                     resultContent.innerHTML = `<div class="error-message">错误: ${data.error}</div>`;
                 } else if (data.sentences) {
@@ -352,6 +362,9 @@ response = requests.post(url, json=data)
         }
 
         function displayResults(sentences) {
+            console.log('displayResults函数收到的sentences:', sentences);
+            console.log('sentences长度:', sentences.length);
+
             const resultContent = document.getElementById('resultContent');
             const labelNames = {
                 'BACKGROUND': '研究背景',
@@ -377,20 +390,44 @@ response = requests.post(url, json=data)
                 }
             });
 
+            console.log('分组后的数据:', grouped);
+            console.log('METHOD句数:', grouped['METHOD'].length);
+            console.log('METHOD详细句子:', grouped['METHOD']);
+
             const order = ['BACKGROUND', 'PURPOSE', 'METHOD', 'RESULT', 'CONCLUSION'];
             let html = '<div class="result-content">';
 
             order.forEach(label => {
                 if (grouped[label].length > 0) {
                     html += `<p><strong>${labelNames[label]}：</strong></p>`;
-                    grouped[label].forEach(sentence => {
+                    grouped[label].forEach((sentence, index) => {
+                        console.log(`添加${label}第${index + 1}个句子:`, sentence.substring(0, 50) + '...');
                         html += `<p>${sentence}</p>`;
                     });
+                    console.log(`${label}显示完成，共${grouped[label].length}个句子`);
                 }
             });
 
             html += '</div>';
             resultContent.innerHTML = html;
+
+            // 验证HTML中是否包含了所有句子
+            const totalInputSentences = sentences.length;
+            const htmlContent = resultContent.innerHTML;
+
+            console.log('验证HTML显示:');
+            console.log('输入句子总数:', totalInputSentences);
+            console.log('HTML内容长度:', htmlContent.length);
+
+            // 检查每个句子是否都在HTML中
+            sentences.forEach((s, index) => {
+                const sentence = s['句子内容'];
+                const isInHTML = htmlContent.includes(sentence);
+                console.log(`第${index + 1}句子 (${sentence.substring(0, 30)}...) 在HTML中: ${isInHTML ? '✓' : '✗'}`);
+                if (!isInHTML) {
+                    console.error('❌ 缺少的句子:', sentence);
+                }
+            });
         }
     </script>
 </body>

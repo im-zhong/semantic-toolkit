@@ -119,6 +119,12 @@ def index():
     return render_template('index.html')
 
 
+@app.route('/test')
+def test():
+    """测试页面 - 直接显示所有结果"""
+    return render_template('test_direct_display.html')
+
+
 @app.route('/api/analyze', methods=['POST'])
 def analyze():
     """分析接口"""
