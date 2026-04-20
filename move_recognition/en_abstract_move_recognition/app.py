@@ -55,7 +55,8 @@ Please strictly output in the following JSON format, do not output any other con
 4. Output JSON only, do not output any other text
 5. CRITICAL: Make sure to identify ALL sentences in the abstract, do not omit any sentences
 6. Be consistent in your classification - use the same criteria for all sentences
-7. Process the abstract sentence by sentence, ensure complete coverage"""
+7. Process the abstract sentence by sentence, ensure complete coverage
+8. Must output complete classification results, ensure JSON format is correct and complete"""
 
 
 def parse_sentences(text: str) -> dict:
@@ -106,18 +107,25 @@ def analyze_abstract(api_key: str, abstract: str) -> dict:
         response = client.chat.completions.create(
             model="glm-4",
             messages=[
-                {"role": "system", "content": "You are a professional scientific literature analysis expert. Your task is to consistently classify ALL sentences in the abstract. Be thorough and systematic - do not skip or omit any sentences. Output only JSON format."},
+                {"role": "system", "content": "You are a professional scientific literature analysis expert. Your task is to consistently classify ALL sentences in the abstract. Be thorough and systematic - do not skip or omit any sentences. Output only JSON format. Must output complete results for all sentences without stopping prematurely."},
                 {"role": "user", "content": prompt}
             ],
             temperature=0.1,  # Lower temperature for more consistent results
-            max_tokens=4096  # Increase output length for longer abstracts
+            max_tokens=8192  # Significantly increase output length for longer abstracts
         )
 
         result_text = response.choices[0].message.content
+        finish_reason = response.choices[0].finish_reason
+
         print("=" * 50)
         print("API Response:")
         print(result_text)
+        print(f"Finish reason: {finish_reason}")
         print("=" * 50)
+
+        # Check if output was truncated due to length limit
+        if finish_reason == "length":
+            print("Warning: Output was truncated due to length limit, may need to handle longer abstracts")
 
         # Use regex to extract
         result = parse_sentences(result_text)

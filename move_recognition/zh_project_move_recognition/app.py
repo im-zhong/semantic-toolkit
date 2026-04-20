@@ -107,18 +107,25 @@ def analyze_project_text(api_key: str, text: str) -> dict:
         response = client.chat.completions.create(
             model="glm-4",
             messages=[
-                {"role": "system", "content": "你是基金项目分析专家。你的任务是一致地分类项目文本中的所有句子。要全面系统，不要跳过或遗漏任何句子。严格按照指定格式输出结果。"},
+                {"role": "system", "content": "你是基金项目分析专家。你的任务是一致地分类项目文本中的所有句子。要全面系统，不要跳过或遗漏任何句子。严格按照指定格式输出结果。必须完整输出所有句子的分类结果，不能中途停止。"},
                 {"role": "user", "content": prompt}
             ],
             temperature=0.1,  # 保持低温以获得一致结果
-            max_tokens=4096  # 增加输出长度以支持更长的项目文本
+            max_tokens=8192  # 大幅增加输出长度以支持更长的项目文本
         )
 
         result_text = response.choices[0].message.content
+        finish_reason = response.choices[0].finish_reason
+
         print("=" * 50)
         print("API返回内容:")
         print(result_text)
+        print(f"Finish reason: {finish_reason}")
         print("=" * 50)
+
+        # 检查是否因为长度限制而被截断
+        if finish_reason == "length":
+            print("警告: 输出因长度限制被截断，可能需要处理更长的文本")
 
         # 解析结果
         result = parse_result_text(result_text)
