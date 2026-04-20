@@ -18,17 +18,40 @@ An automatic move recognition tool for scientific literature abstracts based on 
 pip install -r requirements.txt
 ```
 
-### 2. Get API Key
+### 2. Configure API Key
+
+**Method 1: Use environment variable (recommended, more secure)**
+```bash
+# Temporary setting (current session only)
+export ZHIPU_API_KEY="your_actual_api_key_here"
+
+# Permanent setting (add to ~/.bashrc)
+echo 'export ZHIPU_API_KEY="your_actual_api_key_here"' >> ~/.bashrc
+source ~/.bashrc
+```
+
+**Method 2: Use .env file**
+```bash
+# Copy example configuration file
+cp .env.example .env
+
+# Edit .env file and fill in your API key
+nano .env
+```
+
+⚠️ **Security Note**: Do not commit real API keys to the Git repository. `.env` file is already excluded in .gitignore.
+
+### 3. Get API Key
 
 Visit [Zhipu AI Open Platform](https://open.bigmodel.cn/) to register and obtain an API Key.
 
-### 3. Start the Service
+### 4. Start the Service
 
 ```bash
 python app.py
 ```
 
-### 4. Access the Application
+### 5. Access the Application
 
 Open browser and visit: http://localhost:5001
 

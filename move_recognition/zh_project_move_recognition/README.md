@@ -17,17 +17,40 @@
 pip install -r requirements.txt
 ```
 
-### 2. 获取API Key
+### 2. 配置API Key
+
+**方法1: 使用环境变量（推荐，更安全）**
+```bash
+# 临时设置（当前会话有效）
+export ZHIPU_API_KEY="your_actual_api_key_here"
+
+# 永久设置（添加到 ~/.bashrc）
+echo 'export ZHIPU_API_KEY="your_actual_api_key_here"' >> ~/.bashrc
+source ~/.bashrc
+```
+
+**方法2: 使用 .env 文件**
+```bash
+# 复制示例配置文件
+cp .env.example .env
+
+# 编辑 .env 文件，填入您的 API 密钥
+nano .env
+```
+
+⚠️ **安全提示**: 不要将真实的 API 密钥提交到 Git 仓库。`.env` 文件已在 .gitignore 中排除。
+
+### 3. 获取API Key
 
 访问 [智谱AI开放平台](https://open.bigmodel.cn/) 注册并获取API Key。
 
-### 3. 启动服务
+### 4. 启动服务
 
 ```bash
 python app.py
 ```
 
-### 4. 访问应用
+### 5. 访问应用
 
 打开浏览器访问: http://localhost:5002
 

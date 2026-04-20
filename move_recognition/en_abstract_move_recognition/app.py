@@ -8,11 +8,17 @@ import re
 import json
 from flask import Flask, request, jsonify, render_template
 from zhipuai import ZhipuAI
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 app = Flask(__name__)
 
 # ==================== Configuration ====================
-API_KEY = "e22625d698da4312892b3466ba2aceac.omDODZnT0M0DQNHO"
+API_KEY = os.getenv("ZHIPU_API_KEY")
+if not API_KEY:
+    raise ValueError("API key not found. Please set environment variable ZHIPU_API_KEY")
 # =======================================================
 
 # Move label definitions

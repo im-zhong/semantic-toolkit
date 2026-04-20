@@ -8,11 +8,17 @@ import re
 import json
 from flask import Flask, request, jsonify, render_template
 from zhipuai import ZhipuAI
+from dotenv import load_dotenv
+
+# 加载环境变量
+load_dotenv()
 
 app = Flask(__name__)
 
 # ==================== 配置区 ====================
-API_KEY = "e22625d698da4312892b3466ba2aceac.omDODZnT0M0DQNHO"
+API_KEY = os.getenv("ZHIPU_API_KEY")
+if not API_KEY:
+    raise ValueError("未找到API密钥，请设置环境变量 ZHIPU_API_KEY")
 # ================================================
 
 # 语步标签定义
