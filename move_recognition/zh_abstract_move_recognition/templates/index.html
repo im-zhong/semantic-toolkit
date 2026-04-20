@@ -55,9 +55,15 @@
         .main-layout {
             display: flex;
             gap: 20px;
+            /* 确保flex容器能完整显示所有内容 */
+            flex-wrap: wrap;
         }
         .left-panel, .right-panel {
             flex: 1;
+            /* 添加最小宽度确保内容不被压缩 */
+            min-width: 400px;
+            /* 移除flex限制，让内容决定高度 */
+            height: auto;
         }
         .card {
             background: white;
@@ -129,9 +135,15 @@
             background: #fafafa;
             line-height: 1.8;
             /* 确保内容完整显示，不限制高度 */
+            /* 移除可能的高度限制 */
+            height: auto !important;
+            max-height: none !important;
         }
         .result-content p {
             margin-bottom: 8px;
+            /* 确保段落完整显示 */
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
         .error-message {
             background: #f8d7da;
