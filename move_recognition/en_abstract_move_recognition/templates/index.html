@@ -366,7 +366,10 @@ response = requests.post(url, json=data)
 
             order.forEach(label => {
                 if (grouped[label].length > 0) {
-                    html += `<p><strong>${labelNames[label]}：</strong>${grouped[label].join(' ')}</p>`;
+                    html += `<p><strong>${labelNames[label]}：</strong></p>`;
+                    grouped[label].forEach(sentence => {
+                        html += `<p>${sentence}</p>`;
+                    });
                 }
             });
 
