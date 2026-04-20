@@ -31,51 +31,67 @@ MOVE_LABELS = {
 }
 
 # Prompt template for English abstracts
-PROMPT_TEMPLATE = """You are an expert in analyzing scientific literature abstracts. Please analyze the following English abstract and identify the move category for each sentence.
+PROMPT_TEMPLATE = """Please analyze the following English scientific abstract and identify its move structure.
 
-Move Category Definitions:
-1. BACKGROUND: Introduces the research field background, current status, existing problems, or research motivation
-2. PURPOSE: States the research objectives, problems to solve, or hypotheses to verify
-3. METHOD: Describes the research methods, experimental design, data sources, or technical approaches
-4. RESULT: Presents the research findings, experimental results, or data analysis outcomes
-5. CONCLUSION: Summarizes the conclusions, contributions, significance, or future outlook
-
-Abstract to analyze:
+【Abstract to Analyze】
 {abstract}
 
-Please output the result in the following JSON format, where each sentence contains "sentence" and "move_label" fields:
-{{
-    "sentences": [
-        {{"sentence": "xxx", "move_label": "BACKGROUND/PURPOSE/METHOD/RESULT/CONCLUSION"}},
-        ...
-    ]
-}}
+【Task Requirements】
+Identify sentences belonging to each of the following five move types:
+1. BACKGROUND: Introduces research field status, existing problems, research importance
+2. PURPOSE: States the problems to solve, objectives, innovations
+3. METHOD: Describes methods, techniques, experimental design
+4. RESULT: Shows research findings, experimental results, performance metrics
+5. CONCLUSION: Summarizes contributions, significance, future outlook
 
-Note:
-1. Strictly follow the JSON format
-2. Move labels must be one of the 5 English labels above
-3. Keep sentences complete, do not omit or merge sentences
-4. If a sentence contains multiple move information, choose the most prominent one"""
+【Output Format】
+Please strictly output in the following JSON format, do not output any other content:
+{{"background": ["sentence1", "sentence2"], "purpose": ["sentence1"], "method": ["sentence1", "sentence2"], "result": ["sentence1"], "conclusion": ["sentence1"]}}
+
+【Critical Requirements】
+1. Extract original sentences directly, keep them complete
+2. If a move type does not exist, use empty array []
+3. Each sentence should be classified into only one primary move
+4. Output JSON only, do not output any other text
+5. CRITICAL: Make sure to identify ALL sentences in the abstract, do not omit any sentences
+6. Be consistent in your classification - use the same criteria for all sentences
+7. Process the abstract sentence by sentence, ensure complete coverage"""
 
 
 def parse_sentences(text: str) -> dict:
-    """Use regex to extract sentences and labels"""
+    """Parse JSON response and convert to sentence format"""
     sentences = []
 
-    # Match "sentence": "xxx", "move_label": "yyy" pattern
-    pattern = r'"sentence"\s*:\s*"([^"]+)"\s*,\s*"move_label"\s*:\s*"(\w+)"'
-    matches = re.findall(pattern, text)
+    # Remove markdown code blocks if present
+    text = re.sub(r'```json\s*', '', text)
+    text = re.sub(r'```\s*', '', text)
 
-    for content, label in matches:
-        content = content.strip()
-        label = label.strip()
+    # Move category mapping
+    move_mapping = {
+        "background": "BACKGROUND",
+        "purpose": "PURPOSE",
+        "method": "METHOD",
+        "result": "RESULT",
+        "conclusion": "CONCLUSION"
+    }
 
-        valid_labels = ['BACKGROUND', 'PURPOSE', 'METHOD', 'RESULT', 'CONCLUSION']
-        if label in valid_labels and content:
-            sentences.append({
-                "sentence": content,
-                "move_label": label
-            })
+    # Extract sentences for each move category
+    for key, label in move_mapping.items():
+        # Match "key": ["sentence1", "sentence2", ...] pattern
+        pattern = rf'"{key}"\s*:\s*\[(.*?)\]'
+        match = re.search(pattern, text, re.DOTALL)
+
+        if match:
+            array_content = match.group(1)
+            # Extract all quoted strings
+            extracted_sentences = re.findall(r'"([^"]*)"', array_content)
+            for sentence in extracted_sentences:
+                sentence = sentence.strip()
+                if sentence:
+                    sentences.append({
+                        "sentence": sentence,
+                        "move_label": label
+                    })
 
     return {"sentences": sentences}
 
@@ -90,10 +106,11 @@ def analyze_abstract(api_key: str, abstract: str) -> dict:
         response = client.chat.completions.create(
             model="glm-4",
             messages=[
-                {"role": "system", "content": "You are a professional scientific literature analysis expert, skilled in identifying move structures in academic abstracts."},
+                {"role": "system", "content": "You are a professional scientific literature analysis expert. Your task is to consistently classify ALL sentences in the abstract. Be thorough and systematic - do not skip or omit any sentences. Output only JSON format."},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.3,
+            temperature=0.1,  # Lower temperature for more consistent results
+            max_tokens=4096  # Increase output length for longer abstracts
         )
 
         result_text = response.choices[0].message.content
