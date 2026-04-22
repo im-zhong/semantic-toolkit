@@ -1,0 +1,44 @@
+# 环境变量文件（包含敏感信息）
+.env
+.env.local
+.env.*.local
+
+# Python 编译文件
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# 虚拟环境
+venv/
+env/
+ENV/
+.venv
+
+# IDE 配置文件
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
+
+# 日志文件
+*.log
+
+# 临时文件
+*.tmp
+.cache/
+
+# 测试覆盖率
+.coverage
+htmlcov/
+.pytest_cache/
+
+# 构建文件
+dist/
+build/
+*.egg-info/
