@@ -58,6 +58,45 @@ Get your API key from [https://open.bigmodel.cn/](https://open.bigmodel.cn/)
 
 ## Usage
 
+### 🚀 REST API (Recommended for Production)
+
+FastAPI REST API for easy integration with web applications.
+
+**Start the API:**
+```bash
+# Using uv
+uv run python -m semantic_toolkit.api
+
+# Or using the provided script
+./start_api.sh
+```
+
+**API Endpoints:**
+- `POST /api/v1/keywords/chinese` - Extract keywords from Chinese text
+- `POST /api/v1/keywords/english` - Extract keywords from English text
+- `POST /api/v1/keywords` - Unified interface for both languages
+- `GET /api/v1/languages` - Get supported languages
+- `GET /api/v1/categories` - Get keyword categories
+
+**API Documentation:**
+- Swagger UI: http://localhost:8000/docs
+- ReDoc: http://localhost:8000/redoc
+
+**Example API Usage:**
+```bash
+# Chinese keyword extraction
+curl -X POST "http://localhost:8000/api/v1/keywords/chinese" \
+  -H "Content-Type: application/json" \
+  -d '{"text": "深度学习是机器学习的一个分支", "num_keywords": 5}'
+
+# English keyword extraction
+curl -X POST "http://localhost:8000/api/v1/keywords/english" \
+  -H "Content-Type: application/json" \
+  -d '{"text": "Deep learning is a subset of machine learning", "num_keywords": 5}'
+```
+
+For detailed API documentation, see [README_API.md](README_API.md).
+
 ### Move Recognition Example
 
 ```python
@@ -335,6 +374,7 @@ semantic-toolkit/
 ├── src/
 │   └── semantic_toolkit/
 │       ├── __init__.py
+│       ├── api.py                    # FastAPI application
 │       ├── move_recognition/         # Move recognition module
 │       │   ├── __init__.py
 │       │   ├── models.py            # Data models for move recognition
@@ -350,6 +390,9 @@ semantic-toolkit/
 │   └── test_keyword_recognition.py # Keyword extraction tests
 ├── example.py                       # Move recognition examples
 ├── example_keyword.py               # Keyword extraction examples
+├── api_example.py                  # API usage examples
+├── start_api.sh                   # API startup script
+├── README_API.md                   # Detailed API documentation
 ├── pyproject.toml                   # Project configuration
 ├── .env.example                     # Environment template
 └── README.md                        # This file
