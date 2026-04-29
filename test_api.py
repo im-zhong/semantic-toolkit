@@ -293,7 +293,7 @@ class TestAPI:
             data={"mode": "zh"}
         )
 
-        assert response.status_code == 400
+        assert response.status_code == 422
         assert "文件内容为空" in response.json()["detail"]
 
     @patch('api.get_classifier')
@@ -330,7 +330,7 @@ class TestAPI:
         )
 
         assert response.status_code == 400
-        assert "mode参数必须是" in response.json()["detail"]
+        assert "mode 参数必须是" in response.json()["detail"]
 
     @patch('api.get_classifier')
     def test_classify_text_validation_errors(self, mock_get_classifier):

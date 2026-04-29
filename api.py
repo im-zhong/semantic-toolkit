@@ -5,7 +5,9 @@ from typing import Optional
 from fastapi import FastAPI, HTTPException, File, UploadFile, Form, Depends, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
-
+from io import BytesIO
+from pathlib import Path
+from pypdf import PdfReader
 from clc_classifier import CLCAutoClassifier, DEFAULT_JSON_PATH
 
 app = FastAPI(
@@ -21,6 +23,37 @@ API_FIXED_TOP_K = 80
 # 全局分类器实例
 _classifier: Optional[CLCAutoClassifier] = None
 
+def extract_text_from_pdf_bytes(file_bytes: bytes) -> str:
+    """
+    从 PDF 文件字节中提取文本。
+    注意：只支持可复制文本的 PDF，不支持纯扫描图片 PDF。
+    """
+    try:
+        reader = PdfReader(BytesIO(file_bytes))
+        pages_text = []
+
+        for page in reader.pages:
+            page_text = page.extract_text() or ""
+            if page_text.strip():
+                pages_text.append(page_text.strip())
+
+        text = "\n\n".join(pages_text).strip()
+
+        if not text:
+            raise HTTPException(
+                status_code=400,
+                detail="PDF 未提取到文本内容，可能是扫描版 PDF，请先使用 OCR 或转换为文本文件。"
+            )
+
+        return text
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=400,
+            detail=f"PDF 解析失败：{str(e)}"
+        )
 
 def get_classifier() -> CLCAutoClassifier:
     """获取或初始化分类器实例"""
@@ -138,33 +171,64 @@ async def reject_unsupported_file_form_params(request: Request):
 
 @app.post("/api/v1/classify/file", response_model=ClassifyResponse)
 async def classify_file(
-    file: UploadFile = File(..., description="待分类的文件，支持txt/md/json等文本格式"),
+    file: UploadFile = File(..., description="待分类的文件，支持 txt/md/json/pdf 等格式"),
     mode: str = Form(..., description="分类模式：zh(中文)、en(英文)、domain(专业领域)"),
     domain_hint: Optional[str] = Form(None, description="专业领域提示"),
-    encoding: str = Form("utf-8", description="文件编码，默认utf-8"),
+    encoding: str = Form("utf-8", description="文本文件编码，默认 utf-8"),
     _: None = Depends(reject_unsupported_file_form_params),
 ):
     """
     文件分类接口
 
-    - **file**: 上传的文件
-    - **mode**: 分类模式
-    - **domain_hint**: 专业领域提示（可选）
-    - **encoding**: 文件编码（默认utf-8）
+    - **file**: 上传的文件，支持 txt/md/json/pdf
+    - **mode**: 分类模式，支持 zh、en、domain
+    - **domain_hint**: 专业领域提示，可选
+    - **encoding**: 文本文件编码，默认 utf-8
     """
     try:
-        # 读取文件内容
-        content = await file.read()
-        text = content.decode(encoding)
-
-        if not text.strip():
-            raise HTTPException(status_code=400, detail="文件内容为空")
-
-        # 验证mode参数
+        # 验证 mode 参数
         if mode not in ["zh", "en", "domain"]:
             raise HTTPException(
                 status_code=400,
-                detail="mode参数必须是 zh、en 或 domain 之一"
+                detail="mode 参数必须是 zh、en 或 domain 之一"
+            )
+
+        # 读取文件内容
+        content = await file.read()
+
+        if not content:
+            raise HTTPException(
+                status_code=422,
+                detail="文件内容为空"
+            )
+
+        filename = file.filename or ""
+        suffix = Path(filename).suffix.lower()
+        content_type = file.content_type or ""
+
+        # 根据文件类型提取文本
+        if suffix == ".pdf" or content_type == "application/pdf":
+            text = extract_text_from_pdf_bytes(content)
+        elif suffix in [".txt", ".md", ".json"] or suffix == "":
+            try:
+                text = content.decode(encoding)
+            except UnicodeDecodeError:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"文件解码失败，请检查编码设置（当前：{encoding}）"
+                )
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail="不支持的文件类型，目前仅支持 txt、md、json、pdf 文件"
+            )
+
+        text = text.strip()
+
+        if not text:
+            raise HTTPException(
+                status_code=422,
+                detail="文件文本内容为空"
             )
 
         classifier = get_classifier()
@@ -174,22 +238,26 @@ async def classify_file(
             result = classifier.classify_chinese(text)
         elif mode == "en":
             result = classifier.classify_english(text)
-        else:  # domain
-            result = classifier.classify_domain(text, domain_hint=domain_hint or "")
+        else:
+            result = classifier.classify_domain(
+                text,
+                domain_hint=domain_hint or ""
+            )
 
         return result
 
     except HTTPException:
         raise
-    except UnicodeDecodeError:
+    except ValueError as e:
         raise HTTPException(
             status_code=400,
-            detail=f"文件解码失败，请检查编码设置（当前：{encoding}）"
+            detail=str(e)
         )
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"分类失败: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"分类失败: {str(e)}"
+        )
 
 
 @app.get("/api/v1/modes")
