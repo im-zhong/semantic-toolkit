@@ -8,12 +8,13 @@ from collections import Counter, defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
+from auto_classifier.config import DEFAULT_JSON_PATH
 
 from dotenv import load_dotenv
 
 
 SCI_TECH_PREFIXES = set("NOPQRSTUVX")
-DEFAULT_JSON_PATH = "data/完整版中国图书馆图书分类法.json"
+DEFAULT_JSON_PATH = None
 
 MODE_LABELS = {
     "zh": "中文科技文献分类",

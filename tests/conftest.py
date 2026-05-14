@@ -85,7 +85,7 @@ def temp_clc_json_file(tmp_path, sample_clc_json_data):
 @pytest.fixture
 def mock_zhipu_client():
     """Mock智谱AI客户端"""
-    with patch('clc_classifier.ZhipuClient') as mock:
+    with patch("auto_classifier.algorithms.clc_classifier.ZhipuClient") as mock:
         mock_instance = MagicMock()
         mock.return_value = mock_instance
         mock_instance.model = "glm-4-flash"

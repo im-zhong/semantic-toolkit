@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from clc_classifier import (
+from auto_classifier.algorithms.clc_classifier import (
     normalize_clc_id,
     top_letter,
     clamp,
@@ -16,7 +16,7 @@ from clc_classifier import (
     TfidfCandidateRetriever,
     parse_json_from_llm,
     expand_query_by_rules,
-    CLCAutoClassifier
+    CLCAutoClassifier,
 )
 
 
@@ -325,8 +325,8 @@ class TestExpandQueryByRules:
 class TestCLCAutoClassifier:
     """测试CLCAutoClassifier类"""
 
-    @patch('clc_classifier.ZhipuClient')
-    @patch('clc_classifier.CategoryStore')
+    @patch("auto_classifier.algorithms.clc_classifier.ZhipuClient")
+    @patch("auto_classifier.algorithms.clc_classifier.CategoryStore")
     def test_classifier_init(self, mock_store, mock_client):
         """测试分类器初始化"""
         mock_store.return_value.count.return_value = 2500
@@ -341,8 +341,8 @@ class TestCLCAutoClassifier:
         mock_store.assert_called_once()
         mock_client.assert_called_once_with(model="glm-4")
 
-    @patch('clc_classifier.ZhipuClient')
-    @patch('clc_classifier.CategoryStore')
+    @patch("auto_classifier.algorithms.clc_classifier.ZhipuClient")
+    @patch("auto_classifier.algorithms.clc_classifier.CategoryStore")
     def test_classify_chinese(self, mock_store, mock_client):
         """测试中文分类"""
         mock_store.return_value.count.return_value = 2500
@@ -357,8 +357,8 @@ class TestCLCAutoClassifier:
         result = classifier.classify_chinese("测试文本")
         classifier.classify.assert_called_once_with(text="测试文本", mode="zh")
 
-    @patch('clc_classifier.ZhipuClient')
-    @patch('clc_classifier.CategoryStore')
+    @patch("auto_classifier.algorithms.clc_classifier.ZhipuClient")
+    @patch("auto_classifier.algorithms.clc_classifier.CategoryStore")
     def test_classify_english(self, mock_store, mock_client):
         """测试英文分类"""
         mock_store.return_value.count.return_value = 2500
@@ -373,8 +373,8 @@ class TestCLCAutoClassifier:
         result = classifier.classify_english("Test text")
         classifier.classify.assert_called_once_with(text="Test text", mode="en")
 
-    @patch('clc_classifier.ZhipuClient')
-    @patch('clc_classifier.CategoryStore')
+    @patch("auto_classifier.algorithms.clc_classifier.ZhipuClient")
+    @patch("auto_classifier.algorithms.clc_classifier.CategoryStore")
     def test_classify_domain(self, mock_store, mock_client):
         """测试专业领域分类"""
         mock_store.return_value.count.return_value = 2500
@@ -389,8 +389,8 @@ class TestCLCAutoClassifier:
         result = classifier.classify_domain("测试文本", domain_hint="计算机科学")
         classifier.classify.assert_called_once_with(text="测试文本", mode="domain", domain_hint="计算机科学")
 
-    @patch('clc_classifier.ZhipuClient')
-    @patch('clc_classifier.CategoryStore')
+    @patch("auto_classifier.algorithms.clc_classifier.ZhipuClient")
+    @patch("auto_classifier.algorithms.clc_classifier.CategoryStore")
     def test_classify_invalid_mode(self, mock_store, mock_client):
         """测试无效的分类模式"""
         mock_store.return_value.count.return_value = 2500
@@ -402,8 +402,8 @@ class TestCLCAutoClassifier:
         with pytest.raises(ValueError, match="mode 只能是"):
             classifier.classify("测试文本", mode="invalid")
 
-    @patch('clc_classifier.ZhipuClient')
-    @patch('clc_classifier.CategoryStore')
+    @patch("auto_classifier.algorithms.clc_classifier.ZhipuClient")
+    @patch("auto_classifier.algorithms.clc_classifier.CategoryStore")
     def test_classify_empty_text(self, mock_store, mock_client):
         """测试空文本分类"""
         mock_store.return_value.count.return_value = 2500
